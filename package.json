@@ -1,0 +1,31 @@
+{
+  "name": "tripkhata-manali",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test:rules": "esbuild scripts/ledger-rules.test.ts --bundle --platform=node --format=esm --define:import.meta.env.VITE_SUPABASE_URL=undefined --define:import.meta.env.VITE_SUPABASE_ANON_KEY=undefined --outfile=node_modules/.tmp/ledger-rules.test.mjs && node node_modules/.tmp/ledger-rules.test.mjs",
+    "test:notify": "node scripts/notification-rules.test.ts",
+    "typecheck:edge": "tsc -p scripts/tsconfig.edge.json"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "pgsql-parser": "^18.3.5",
+    "tailwindcss": "^4.3.5",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.0"
+  }
+}
