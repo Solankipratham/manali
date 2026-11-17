@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from './components/Header';
+import NotFound from './components/NotFound';
 import LedgerList, { Filters } from './components/LedgerList';
 import ExpenseFormModal from './components/ExpenseFormModal';
 import AllTripDetails from './components/AllTripDetails';
@@ -23,6 +24,7 @@ import {
   type SortKey,
 } from './lib/calculations';
 import { formatINR } from './lib/format';
+import { isKnownPath, markInternalNavigation } from './lib/routes';
 import type { Expense, ExpenseInput } from './lib/types';
 
 interface FormState {
@@ -54,6 +56,11 @@ export default function App() {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
+  // TripKhata is a modal-based SPA: "/" is the only real route. We still track
+  // the pathname so an unknown URL can render the 404 view instead of the
+  // ledger, and so browser back/forward moves in and out of it.
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+
   const activeMember = members.find((m) => m.id === activeMemberId) ?? members[0];
 
   // Deep-link used by the notification emails: <app-url>/?report=1 opens the
@@ -61,6 +68,9 @@ export default function App() {
   // report" button in every email lands on the ledger instead of the home
   // screen. Also accepts #report for hash-based hosting.
   useEffect(() => {
+    // An unknown path is not a real page — never hijack it as a report link.
+    if (!isKnownPath(window.location.pathname)) return;
+
     const wantsReport =
       new URLSearchParams(window.location.search).get('report') === '1' ||
       window.location.hash === '#report';
@@ -69,8 +79,37 @@ export default function App() {
     // Remove the flag so closing the modal doesn't reopen it on a refresh.
     if (window.location.search || window.location.hash) {
       window.history.replaceState({}, '', window.location.pathname);
+      setPathname(window.location.pathname);
     }
   }, []);
+
+  // Browser back/forward. popstate only ever fires for same-document moves,
+  // so it also proves there is a real history entry behind this one.
+  useEffect(() => {
+    const onPopState = () => {
+      markInternalNavigation();
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = useCallback((path: string, replace = false) => {
+    markInternalNavigation();
+    if (replace) window.history.replaceState({}, '', path);
+    else window.history.pushState({}, '', path);
+    setPathname(window.location.pathname);
+  }, []);
+
+  // Brand-logo / "go home" action: always land on a clean dashboard.
+  // Closes every modal and only touches the URL when we are not already at
+  // the app root, so repeated clicks never stack duplicate history entries.
+  const handleHome = useCallback(() => {
+    setReportOpen(false);
+    setFormState(null);
+    setAuditExpense(null);
+    if (window.location.pathname !== '/') navigate('/');
+  }, [navigate]);
 
   const summary = useMemo(() => buildSummary(expenses, members), [expenses, members]);
   const visible = useMemo(
@@ -107,6 +146,13 @@ export default function App() {
     setSortDir(dir);
   };
 
+  // Unknown URL → show the 404 experience instead of the ledger. All hooks
+  // above have already run, so hook order is identical either way and no
+  // ledger, modal or Supabase behaviour is touched.
+  if (!isKnownPath(pathname)) {
+    return <NotFound onNavigate={navigate} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header
@@ -114,6 +160,7 @@ export default function App() {
         activeMemberId={activeMemberId}
         onSwitchMember={setActiveMemberId}
         onOpenReport={() => setReportOpen(true)}
+        onHome={handleHome}
       />
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-5">

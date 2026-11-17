@@ -1,3 +1,4 @@
+import { useState, type MouseEvent } from 'react';
 import type { Member } from '../lib/types';
 import { Avatar, IconReport } from './ui';
 import { storageMode } from '../lib/storage';
@@ -7,25 +8,61 @@ interface Props {
   activeMemberId: string;
   onSwitchMember: (id: string) => void;
   onOpenReport: () => void;
+  /** Returns to the home / dashboard screen. */
+  onHome: () => void;
 }
 
-export default function Header({ members, activeMemberId, onSwitchMember, onOpenReport }: Props) {
+export default function Header({
+  members,
+  activeMemberId,
+  onSwitchMember,
+  onOpenReport,
+  onHome,
+}: Props) {
   const active = members.find((m) => m.id === activeMemberId) ?? members[0];
+
+  // Brand logo served from public/tripkhata-logo.png. If the file is missing,
+  // fall back to the original ₹ mark so the navbar never shows a broken image.
+  const [logoOk, setLogoOk] = useState(true);
+
+  // Left-click navigates in-app; modified clicks (new tab / window) keep the
+  // browser's native behaviour because we only intercept a plain left click.
+  const handleLogoClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onHome();
+  };
 
   return (
     <header className="no-print sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-600 text-lg font-bold text-white shadow-sm">
-            ₹
-          </span>
+        <a
+          href="/"
+          onClick={handleLogoClick}
+          aria-label="TripKhata — go to the dashboard"
+          className="group flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+        >
+          {logoOk ? (
+            <img
+              src="/tripkhata-logo.png"
+              alt=""
+              onError={() => setLogoOk(false)}
+              className="h-8 max-w-[88px] shrink-0 object-contain sm:h-9 sm:max-w-[150px]"
+            />
+          ) : (
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-600 text-lg font-bold text-white shadow-sm">
+              ₹
+            </span>
+          )}
           <div className="leading-tight">
-            <p className="text-[15px] font-extrabold tracking-tight text-slate-900">TripKhata</p>
+            <p className="text-[15px] font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-emerald-700">
+              TripKhata
+            </p>
             <p className="text-[11px] font-medium text-slate-500">
               Manali Trip · 5 members · shared ledger
             </p>
           </div>
-        </div>
+        </a>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <span

@@ -31,6 +31,88 @@ body {
   scrollbar-color: var(--color-slate-300) transparent;
 }
 
+/* --------------------------- 404 page ------------------------------
+ * CSS-only motion for NotFound. No animation library is installed (and none
+ * is needed): a short entrance stagger, a gentle float on the illustration,
+ * a marching-ants route, and a soft pulse on the "destination unknown" pin.
+ * All of it switches off under prefers-reduced-motion.
+ * ------------------------------------------------------------------- */
+
+@keyframes tk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tk-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes tk-march {
+  to {
+    stroke-dashoffset: -96;
+  }
+}
+
+@keyframes tk-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+.tk-rise {
+  animation: tk-rise 0.72s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+}
+.tk-delay-1 {
+  animation-delay: 0.08s;
+}
+.tk-delay-2 {
+  animation-delay: 0.16s;
+}
+.tk-delay-3 {
+  animation-delay: 0.26s;
+}
+.tk-float {
+  animation: tk-float 6s ease-in-out infinite;
+}
+.tk-route {
+  animation: tk-march 2.4s linear infinite;
+}
+.tk-blip {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tk-pulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-rise,
+  .tk-float,
+  .tk-route,
+  .tk-blip {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
 /* ------------------------------ Print ------------------------------ */
 @media print {
   body {
